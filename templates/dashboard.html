@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Prakash Electricals</title>
+ <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to Prakash Electricals</h1>
+    <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="form-section">
+      <h2>Add Product</h2>
+      <form method="POST" action="{{ url_for('add_product') }}">
+        <label>Product Name:</label>
+        <input type="text" name="name" required>
+        <label>Quantity:</label>
+        <input type="number" name="quantity" required>
+        <label>Price per Unit:</label>
+        <input type="number" step="0.01" name="price" required>
+        <button type="submit">Add Product</button>
+      </form>
+    </div>
+
+    <div class="form-section">
+      <h2>Sell Product</h2>
+      <form method="POST" action="{{ url_for('sell_product') }}">
+        <label>Product Name:</label>
+        <input type="text" name="name" required>
+        <label>Quantity:</label>
+        <input type="number" name="quantity" required>
+        <label>Price per Unit:</label>
+        <input type="number" step="0.01" name="price" required>
+        <label>Discount (optional):</label>
+        <input type="number" step="0.01" name="discount">
+        <label>Payment Method:</label>
+        <select name="payment_method">
+          <option value="Cash">Cash</option>
+          <option value="UPI">UPI</option>
+        </select>
+        <button type="submit">Sell</button>
+      </form>
+    </div>
+
+    <div class="table-section">
+      <h2>Available Products</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Price (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+            <tr>
+              <td>{{ product['id'] }}</td>
+              <td>{{ product['name'] }}</td>
+              <td>{{ product['quantity'] }}</td>
+              <td>₹{{ "%.2f"|format(product['price']) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
