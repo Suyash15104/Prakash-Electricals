@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime, date
 import csv
 from io import StringIO
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -129,18 +130,34 @@ def daily_report():
     for s in sales:
         cw.writerow([s["id"], s["product_name"], s["quantity"], s["price_per_unit"], s["total"], s["date_time"], s["payment_method"]])
 
+    
     si.seek(0)
+    output = BytesIO()
+    output.write(si.getvalue().encode('utf-8'))
+    output.seek(0)
+
     return send_file(
-        StringIO(si.read()),
-        mimetype='text/csv',
-        as_attachment=True,
-        download_name=f"daily_report_{today}.csv"
-    )
+       output,
+       mimetype='text/csv',
+       as_attachment=True,
+       download_name=f"daily_report_{today}.csv"
+)
 
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect(url_for("login"))
+@app.route("/get_price")
+def get_price():
+    name = request.args.get("name")
+    conn = get_db_connection()
+    product = conn.execute("SELECT price FROM products WHERE name = ?", (name,)).fetchone()
+    conn.close()
+    if product:
+        return jsonify(price=product["price"])
+    else:
+        return jsonify(price=None)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
