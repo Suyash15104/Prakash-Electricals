@@ -136,30 +136,6 @@ def daily_report():
         as_attachment=True,
         download_name=f"daily_report_{today}.csv"
     )
-@app.route("/daily_report")
-def daily_report():
-    if "user" not in session:
-        return redirect(url_for("login"))
-
-    today = date.today().strftime("%Y-%m-%d")
-    conn = get_db_connection()
-    sales = conn.execute("SELECT * FROM sales WHERE date(date_time) = ?", (today,)).fetchall()
-    conn.close()
-
-    si = StringIO()
-    cw = csv.writer(si)
-    cw.writerow(["ID", "Product Name", "Quantity", "Price/unit", "Total", "Date/Time", "Payment Method"])
-    for s in sales:
-        cw.writerow([s["id"], s["product_name"], s["quantity"], s["price_per_unit"], s["total"], s["date_time"], s["payment_method"]])
-
-    si.seek(0)
-    return send_file(
-        StringIO(si.read()),
-        mimetype='text/csv',
-        as_attachment=True,
-        download_name=f"daily_report_{today}.csv"
-    )
-
 
 @app.route("/logout")
 def logout():
