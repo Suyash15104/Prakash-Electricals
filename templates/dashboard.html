@@ -1,9 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Dashboard - Prakash Electricals</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .form-grid label, .form-grid input, .form-grid select {
+      display: block;
+      width: 100%;
+    }
+    #totalAmount {
+      background-color: #f0f0f0;
+    }
+    .btn-add {
+      margin-top: 1rem;
+      display: inline-block;
+      padding: 8px 16px;
+      background-color: #2196f3;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -20,26 +43,44 @@
 
     <div class="form-section">
       <h2>Sell Product</h2>
+      <a href="{{ url_for('add') }}" class="btn-add">➕ Add New Product</a>
       <form method="POST" action="{{ url_for('sell_product') }}">
-        <label>Product Name:</label>
-        <input type="text" name="name" id="productInput" list="productList" required>
-        <datalist id="productList"></datalist>
+        <div class="form-grid">
+          <div>
+            <label>Product Name:</label>
+            <input type="text" name="name" id="nameInput" list="productList" required>
+            <datalist id="productList"></datalist>
+          </div>
 
-        <label>Quantity:</label>
-        <input type="number" name="quantity" required>
+          <div>
+            <label>Quantity:</label>
+            <input type="number" name="quantity" id="quantityInput" required>
+          </div>
 
-        <label>Price per Unit:</label>
-        <input type="number" step="0.01" name="price" id="priceInput" required>
+          <div>
+            <label>Price per Unit:</label>
+            <input type="number" step="0.01" name="price" id="priceInput" required>
+          </div>
 
-        <label>Discount (optional):</label>
-        <input type="number" step="0.01" name="discount">
+          <div>
+            <label>Discount (optional):</label>
+            <input type="number" step="0.01" name="discount">
+          </div>
 
-        <label>Payment Method:</label>
-        <select name="payment_method">
-          <option value="Cash">Cash</option>
-          <option value="UPI">UPI</option>
-        </select>
+          <div>
+            <label>Payment Method:</label>
+            <select name="payment_method">
+              <option value="Cash">Cash</option>
+              <option value="UPI">UPI</option>
+            </select>
+          </div>
 
+          <div>
+            <label>Total Amount (₹):</label>
+            <input type="text" id="totalAmount" readonly>
+          </div>
+        </div>
+        <br>
         <button type="submit">Sell</button>
       </form>
     </div>
@@ -57,12 +98,12 @@
         </thead>
         <tbody>
           {% for product in products %}
-          <tr>
-            <td>{{ product['id'] }}</td>
-            <td>{{ product['name'] }}</td>
-            <td>{{ product['quantity'] }}</td>
-            <td>₹{{ "%.2f"|format(product['price']) }}</td>
-          </tr>
+            <tr>
+              <td>{{ product['id'] }}</td>
+              <td>{{ product['name'] }}</td>
+              <td>{{ product['quantity'] }}</td>
+              <td>₹{{ "%.2f"|format(product['price']) }}</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -70,7 +111,7 @@
   </div>
 
   <script>
-    // Populate product names for datalist
+    // Populate datalist
     fetch("/product_names")
       .then(response => response.json())
       .then(data => {
@@ -82,17 +123,31 @@
         });
       });
 
-    // Auto-fetch price when product name is selected
-    document.getElementById("productInput").addEventListener("change", function () {
-      const productName = this.value;
-      fetch(`/get_price/${encodeURIComponent(productName)}`)
-        .then(response => response.json())
+    // Autofill price and calculate total
+    const nameInput = document.getElementById("nameInput");
+    const quantityInput = document.getElementById("quantityInput");
+    const priceInput = document.getElementById("priceInput");
+    const totalAmount = document.getElementById("totalAmount");
+
+    nameInput.addEventListener("change", () => {
+      fetch(`/get_price?name=${encodeURIComponent(nameInput.value)}`)
+        .then(res => res.json())
         .then(data => {
           if (data.price !== null) {
-            document.getElementById("priceInput").value = data.price;
+            priceInput.value = data.price;
+            updateTotal();
           }
         });
     });
+
+    quantityInput.addEventListener("input", updateTotal);
+    priceInput.addEventListener("input", updateTotal);
+
+    function updateTotal() {
+      const price = parseFloat(priceInput.value) || 0;
+      const qty = parseInt(quantityInput.value) || 0;
+      totalAmount.value = (price * qty).toFixed(2);
+    }
   </script>
 </body>
 </html>

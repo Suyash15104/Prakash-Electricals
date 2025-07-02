@@ -123,6 +123,13 @@ def get_price(product_name):
     if product:
         return jsonify({"price": product["price"]})
     return jsonify({"price": None})
+@app.route("/get_price")
+def get_price():
+    name = request.args.get("name")
+    conn = get_db_connection()
+    result = conn.execute("SELECT price FROM products WHERE name = ?", (name,)).fetchone()
+    conn.close()
+    return jsonify(price=result["price"] if result else None)
 
 
 if __name__ == "__main__":
