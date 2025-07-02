@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import sqlite3
 from datetime import datetime, date
 
@@ -62,6 +62,12 @@ def dashboard():
     conn.close()
     return render_template("dashboard.html", products=products)
 
+@app.route("/add")
+def add():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template("add_product.html")
+
 @app.route("/add_product", methods=["POST"])
 def add_product():
     if "user" not in session:
@@ -83,7 +89,8 @@ def sell_product():
     name = request.form["name"]
     quantity = int(request.form["quantity"])
     price = float(request.form["price"])
-    discount = float(request.form.get("discount", 0))
+    discount_input = request.form.get("discount", "0")
+    discount = float(discount_input) if discount_input.strip() else 0.0
     payment_method = request.form["payment_method"]
     total = max(0, quantity * price - discount)
     date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -97,10 +104,26 @@ def sell_product():
     flash(f"Sold {quantity} of '{name}' for ₹{total:.2f} via {payment_method}", "success")
     return redirect(url_for("dashboard"))
 
+@app.route("/product_names")
+def product_names():
+    conn = get_db_connection()
+    products = conn.execute("SELECT name FROM products").fetchall()
+    conn.close()
+    return jsonify(names=[product["name"] for product in products])
+
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect(url_for("login"))
+@app.route("/get_price/<product_name>")
+def get_price(product_name):
+    conn = get_db_connection()
+    product = conn.execute("SELECT price FROM products WHERE name = ?", (product_name,)).fetchone()
+    conn.close()
+    if product:
+        return jsonify({"price": product["price"]})
+    return jsonify({"price": None})
+
 
 if __name__ == "__main__":
     app.run(debug=True)

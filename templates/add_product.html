@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Product - Prakash Electricals</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Add Product</h1>
+    <a href="{{ url_for('dashboard') }}" class="back-btn">Back to Dashboard</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('add_product') }}">
+      <label>Product Name:</label>
+      <input type="text" name="name" required>
+      <label>Quantity:</label>
+      <input type="number" name="quantity" required>
+      <label>Price per Unit (₹):</label>
+      <input type="number" step="0.01" name="price" required>
+      <button type="submit">Add Product</button>
+    </form>
+  </div>
+</body>
+</html>
