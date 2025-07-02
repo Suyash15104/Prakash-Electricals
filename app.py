@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 import sqlite3
 from datetime import datetime, date
+import csv
+from io import StringIO
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -111,20 +113,58 @@ def product_names():
     conn.close()
     return jsonify(names=[product["name"] for product in products])
 
+@app.route("/daily_report")
+def daily_report():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    today = date.today().strftime("%Y-%m-%d")
+    conn = get_db_connection()
+    sales = conn.execute("SELECT * FROM sales WHERE date(date_time) = ?", (today,)).fetchall()
+    conn.close()
+
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(["ID", "Product Name", "Quantity", "Price/unit", "Total", "Date/Time", "Payment Method"])
+    for s in sales:
+        cw.writerow([s["id"], s["product_name"], s["quantity"], s["price_per_unit"], s["total"], s["date_time"], s["payment_method"]])
+
+    si.seek(0)
+    return send_file(
+        StringIO(si.read()),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f"daily_report_{today}.csv"
+    )
+@app.route("/daily_report")
+def daily_report():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    today = date.today().strftime("%Y-%m-%d")
+    conn = get_db_connection()
+    sales = conn.execute("SELECT * FROM sales WHERE date(date_time) = ?", (today,)).fetchall()
+    conn.close()
+
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(["ID", "Product Name", "Quantity", "Price/unit", "Total", "Date/Time", "Payment Method"])
+    for s in sales:
+        cw.writerow([s["id"], s["product_name"], s["quantity"], s["price_per_unit"], s["total"], s["date_time"], s["payment_method"]])
+
+    si.seek(0)
+    return send_file(
+        StringIO(si.read()),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f"daily_report_{today}.csv"
+    )
+
+
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect(url_for("login"))
-@app.route("/get_price/<product_name>")
-def get_price(product_name):
-    conn = get_db_connection()
-    product = conn.execute("SELECT price FROM products WHERE name = ?", (product_name,)).fetchone()
-    conn.close()
-    if product:
-        return jsonify({"price": product["price"]})
-    return jsonify({"price": None})
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
