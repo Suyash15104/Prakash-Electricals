@@ -10,7 +10,9 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
     }
-    .form-grid label, .form-grid input, .form-grid select {
+    .form-grid label,
+    .form-grid input,
+    .form-grid select {
       display: block;
       width: 100%;
     }
@@ -51,22 +53,18 @@
             <input type="text" name="name" id="nameInput" list="productList" required>
             <datalist id="productList"></datalist>
           </div>
-
           <div>
             <label>Quantity:</label>
             <input type="number" name="quantity" id="quantityInput" required>
           </div>
-
           <div>
             <label>Price per Unit:</label>
             <input type="number" step="0.01" name="price" id="priceInput" required>
           </div>
-
           <div>
             <label>Discount (optional):</label>
             <input type="number" step="0.01" name="discount">
           </div>
-
           <div>
             <label>Payment Method:</label>
             <select name="payment_method">
@@ -74,7 +72,6 @@
               <option value="UPI">UPI</option>
             </select>
           </div>
-
           <div>
             <label>Total Amount (₹):</label>
             <input type="text" id="totalAmount" readonly>
@@ -84,6 +81,10 @@
         <button type="submit">Sell</button>
       </form>
     </div>
+ <a href="{{ url_for('daily_report') }}" class="btn-report" style="display:inline-block; margin-bottom: 1rem; background-color: #4caf50; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none;">
+  📄 Download Daily Report
+ </a>
+
 
     <div class="table-section">
       <h2>Available Products</h2>
@@ -113,7 +114,7 @@
   <script>
     // Populate datalist
     fetch("/product_names")
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
         const dataList = document.getElementById("productList");
         data.names.forEach(name => {
@@ -123,31 +124,28 @@
         });
       });
 
-    // Autofill price and calculate total
-    const nameInput = document.getElementById("nameInput");
-    const quantityInput = document.getElementById("quantityInput");
-    const priceInput = document.getElementById("priceInput");
-    const totalAmount = document.getElementById("totalAmount");
-
-    nameInput.addEventListener("change", () => {
-      fetch(`/get_price?name=${encodeURIComponent(nameInput.value)}`)
+    // Auto-fill price when product selected
+    document.getElementById("nameInput").addEventListener("change", function () {
+      const name = this.value;
+      fetch(`/get_price?name=${encodeURIComponent(name)}`)
         .then(res => res.json())
         .then(data => {
           if (data.price !== null) {
-            priceInput.value = data.price;
+            document.getElementById("priceInput").value = data.price;
             updateTotal();
           }
         });
     });
 
-    quantityInput.addEventListener("input", updateTotal);
-    priceInput.addEventListener("input", updateTotal);
-
+    // Auto-calculate total
     function updateTotal() {
-      const price = parseFloat(priceInput.value) || 0;
-      const qty = parseInt(quantityInput.value) || 0;
-      totalAmount.value = (price * qty).toFixed(2);
+      const qty = parseFloat(document.getElementById("quantityInput").value) || 0;
+      const price = parseFloat(document.getElementById("priceInput").value) || 0;
+      document.getElementById("totalAmount").value = (qty * price).toFixed(2);
     }
+
+    document.getElementById("quantityInput").addEventListener("input", updateTotal);
+    document.getElementById("priceInput").addEventListener("input", updateTotal);
   </script>
 </body>
 </html>
